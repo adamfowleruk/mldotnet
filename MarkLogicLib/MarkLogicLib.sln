@@ -1,0 +1,49 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MarkLogicLib", "MarkLogicLib.csproj", "{FC19E17B-4EE8-4933-BD23-4CBF60852A84}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MarkLogicTests", "..\MarkLogicTests\MarkLogicTests.csproj", "{91EDD489-1344-4633-8036-CB7CF6BCD2A6}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
+		AppStore|x86 = AppStore|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{91EDD489-1344-4633-8036-CB7CF6BCD2A6}.AppStore|x86.ActiveCfg = AppStore|x86
+		{91EDD489-1344-4633-8036-CB7CF6BCD2A6}.AppStore|x86.Build.0 = AppStore|x86
+		{91EDD489-1344-4633-8036-CB7CF6BCD2A6}.Debug|x86.ActiveCfg = Debug|x86
+		{91EDD489-1344-4633-8036-CB7CF6BCD2A6}.Debug|x86.Build.0 = Debug|x86
+		{91EDD489-1344-4633-8036-CB7CF6BCD2A6}.Release|x86.ActiveCfg = Release|x86
+		{91EDD489-1344-4633-8036-CB7CF6BCD2A6}.Release|x86.Build.0 = Release|x86
+		{FC19E17B-4EE8-4933-BD23-4CBF60852A84}.AppStore|x86.ActiveCfg = AppStore|x86
+		{FC19E17B-4EE8-4933-BD23-4CBF60852A84}.AppStore|x86.Build.0 = AppStore|x86
+		{FC19E17B-4EE8-4933-BD23-4CBF60852A84}.Debug|x86.ActiveCfg = Debug|x86
+		{FC19E17B-4EE8-4933-BD23-4CBF60852A84}.Debug|x86.Build.0 = Debug|x86
+		{FC19E17B-4EE8-4933-BD23-4CBF60852A84}.Release|x86.ActiveCfg = Release|x86
+		{FC19E17B-4EE8-4933-BD23-4CBF60852A84}.Release|x86.Build.0 = Release|x86
+	EndGlobalSection
+	GlobalSection(MonoDevelopProperties) = preSolution
+		StartupItem = MarkLogicLib.csproj
+		Policies = $0
+		$0.TextStylePolicy = $1
+		$1.FileWidth = 120
+		$1.TabWidth = 2
+		$1.IndentWidth = 2
+		$1.NoTabsAfterNonTabs = True
+		$1.inheritsSet = VisualStudio
+		$1.inheritsScope = text/plain
+		$1.scope = text/plain
+		$0.TextStylePolicy = $2
+		$2.inheritsSet = null
+		$2.scope = text/x-csharp
+		$0.CSharpFormattingPolicy = $3
+		$3.ElseIfNewLinePlacement = SameLine
+		$3.AfterDelegateDeclarationParameterComma = True
+		$3.inheritsSet = Mono
+		$3.inheritsScope = text/x-csharp
+		$3.scope = text/x-csharp
+	EndGlobalSection
+EndGlobal

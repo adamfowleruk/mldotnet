@@ -1,0 +1,16 @@
+
+For Sync client project:-
+
+REST functions required
+- Login (Digest, Basic, with https)
+/ Search for all docs under a URI, returning URIs (first sync)
+/ Search for all docs since MVCC version under a URI, returning URIs (subsequent syncs)
+- Ensure auto directory (URL?) creation is on
+/ Begin transaction
+/ Commit transaction
+/ Rollback transaction
+/ Put document
+/ Get document(s)
+/ Delete document
+
+Investigate auto boxing String(uri)<->DocRef
