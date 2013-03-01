@@ -70,6 +70,30 @@
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Drawing" />
     <Reference Include="MonoMac" />
+    <Reference Include="MsgPack">
+      <HintPath>..\..\..\lib\ServiceStack-v3.9.32\MsgPack.dll</HintPath>
+    </Reference>
+    <Reference Include="ServiceStack.Common">
+      <HintPath>..\..\..\lib\ServiceStack-v3.9.32\ServiceStack.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="ServiceStack.Interfaces">
+      <HintPath>..\..\..\lib\ServiceStack-v3.9.32\ServiceStack.Interfaces.dll</HintPath>
+    </Reference>
+    <Reference Include="ServiceStack.Plugins.MsgPack">
+      <HintPath>..\..\..\lib\ServiceStack-v3.9.32\ServiceStack.Plugins.MsgPack.dll</HintPath>
+    </Reference>
+    <Reference Include="ServiceStack.Plugins.ProtoBuf">
+      <HintPath>..\..\..\lib\ServiceStack-v3.9.32\ServiceStack.Plugins.ProtoBuf.dll</HintPath>
+    </Reference>
+    <Reference Include="ServiceStack.ServiceInterface">
+      <HintPath>..\..\..\lib\ServiceStack-v3.9.32\ServiceStack.ServiceInterface.dll</HintPath>
+    </Reference>
+    <Reference Include="ServiceStack.Text">
+      <HintPath>..\..\..\lib\ServiceStack-v3.9.32\ServiceStack.Text.dll</HintPath>
+    </Reference>
+    <Reference Include="ServiceStack">
+      <HintPath>..\..\..\lib\ServiceStack-v3.9.32\ServiceStack.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\" />

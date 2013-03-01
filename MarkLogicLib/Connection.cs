@@ -1,4 +1,7 @@
 using System;
+using ServiceStack.Common;
+using ServiceStack.ServiceClient.Web;
+using ServiceStack.ServiceInterface;
 
 namespace MarkLogicLib {
   public class Connection {
