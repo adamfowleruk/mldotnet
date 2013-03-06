@@ -1,8 +1,9 @@
 using System;
+using ServiceStack.ServiceHost;
 
 namespace MarkLogicLib
 {
-  public class Request
+  public class Request: IReturn<Response>
   {
     public Request ()
     {

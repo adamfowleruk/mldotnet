@@ -112,6 +112,8 @@
     <Compile Include="DocRefs.cs" />
     <Compile Include="DocList.cs" />
     <Compile Include="ConnectionAsync.cs" />
+    <Compile Include="Request.cs" />
+    <Compile Include="Response.cs" />
   </ItemGroup>
   <ProjectExtensions>
     <MonoDevelop>

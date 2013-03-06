@@ -2,7 +2,7 @@ using System;
 
 namespace MarkLogicLib
 {
-  public class DocList : IReturn<List<Doc>>
+  public class DocList
   {
     public DocList ()
     {

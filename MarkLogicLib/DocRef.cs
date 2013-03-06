@@ -2,7 +2,7 @@ using System;
 
 namespace MarkLogicLib
 {
-  public class DocRef : IReturn<DocRef>
+  public class DocRef
   {
     public DocRef ()
     {

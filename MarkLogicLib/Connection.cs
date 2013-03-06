@@ -10,12 +10,15 @@ using System.Collections;
 namespace MarkLogicLib {
   public class Connection {
 
-    private Options options = new Options();
-    private IRestClient restClient = null; // TODO see how this supports Digest, Basic, and HTTPS
+    public Options options { get; set; }
+
+    private IRestClient restClient = null; // see how this supports Digest, Basic, and HTTPS -> Automatically once user/pass configured (see configure)
 
     private String txid = null;
 
 	  public Connection () {
+      options = new Options();
+      configure (options);
 	  }
 
     private String completePath(String path,Hashtable parameters) 
@@ -24,7 +27,7 @@ namespace MarkLogicLib {
       if (path.Contains ("?")) {
         nextChar = "&";
       }
-      String newPath = path.Clone ();
+      String newPath = (String)path.Clone ();
       foreach (String key in parameters.Keys) {
         newPath += nextChar + key + "=" + (String)parameters[key]; // TODO param encode for uri
         nextChar = "&";
@@ -33,20 +36,20 @@ namespace MarkLogicLib {
     }
 
 
-    public TResponse doGet(String path,Hashtable parameters) {
-      return restClient.Get<TResponse>(completePath(path,parameters));
+    public Response doGet(String path,Hashtable parameters) {
+      return restClient.Get<Response>(completePath(path,parameters));
     }
 
-    public TResponse doPut(String path,Hashtable parameters,Doc doc) {
-      return restClient.Put<TResponse> (completePath (path, parameters), doc);
+    public Response doPut(String path,Hashtable parameters,Doc doc) {
+      return restClient.Put<Response> (completePath (path, parameters), doc); // TODO serialise document to restClient URL as string content format json
     }
 
-    public TResponse doPost(String path,Hashtable parameters,Doc doc) {
-      return restClient.Post<TResponse> (completePath (path, parameters), doc);
+    public Response doPost(String path,Hashtable parameters,Doc doc) {
+      return restClient.Post<Response> (completePath (path, parameters), doc); // TODO serialise document to restClient URL as string content format json
     }
 
-    public TResponse doDelete(String path,Hashtable parameters) {
-      return restClient.Delete<TResponse> (completePath (path, parameters));
+    public Response doDelete(String path,Hashtable parameters) {
+      return restClient.Delete<Response> (completePath (path, parameters));
     }
     
     /**
@@ -56,20 +59,16 @@ namespace MarkLogicLib {
      * options = {method: "GET|POST|PUT|DELETE", path: "/v1/somepath?key=value&format=json"}
      * content = undefined for GET, DELETE, json for PUT, whatever as required for POST
      */
-    public TResponse doRequest(String path,Hashtable parameters,Doc doc,String method) {
+    public Response doRequest(String path,Hashtable parameters,Doc doc,String method) {
       switch (method) {
       case "GET":
         return doGet (path, parameters);
-        break;
       case "POST":
         return doPost (path, parameters, doc);
-        break;
       case "PUT":
         return doPut (path, parameters, doc);
-        break;
       case "DELETE":
         return doDelete (path, parameters);
-        break;
       default:
         return null;
       }
@@ -125,12 +124,10 @@ namespace MarkLogicLib {
      * 
      * https://docs.marklogic.com/REST/GET/v1/documents
      */
-		public Doc get(String uri) {
+    public Response get(String uri) {
       Hashtable qp = new Hashtable ();
       qp.Add ("uri", uri);
-      TResponse response = doGet("/v1/documents", qp);
-      // TODO Parse in to Doc as required
-
+      return doGet("/v1/documents", qp);
 		}
     
     /**
@@ -138,11 +135,12 @@ namespace MarkLogicLib {
      * 
      * https://docs.marklogic.com/REST/GET/v1/documents
      */
-		public Doc metadata() {
+    public Response metadata() {
       String path = @"/v1/documents";
       Hashtable qp = new Hashtable ();
       qp.Add ("category", "metadata");
-      TResponse response = doGet (path, qp);
+      Response response = doGet (path, qp);
+      return response;
     }
 		
     // NEEDED FOR FILE SYNC PROJECT
@@ -153,11 +151,11 @@ namespace MarkLogicLib {
      *
      * https://docs.marklogic.com/REST/PUT/v1/documents
      */
-    public void save(Doc doc,String docuri,Doc properties) {
+    public Response save(Doc doc,String docuri,Doc properties) {
       String path = @"/v1/documents";
       Hashtable qp = new Hashtable ();
       qp.Add ("uri", docuri);
-      doPut (path, qp);
+      return doPut (path, qp,doc);
 	  }
     
     /**
@@ -173,11 +171,11 @@ namespace MarkLogicLib {
      * 
      * https://docs.marklogic.com/REST/DELETE/v1/documents
      */ 
-    public void delete(String docuri) {
+    public Response delete(String docuri) {
       String path = @"/v1/documents";
       Hashtable qp = new Hashtable ();
       qp.Add ("uri", docuri);
-      doDelete (path, qp);
+      return doDelete (path, qp);
 		}
 
     // SEARCH FUNCTIONS
@@ -186,13 +184,15 @@ namespace MarkLogicLib {
      * http://docs.marklogic.com/REST/GET/v1/search
      */
 		public DocList collect() {
+      return null; // TODO change from null
 		}
     
     /**
      * Lists all documents in a directory, to the specified depth (default: 1), optionally matching the specified fields
      * http://docs.marklogic.com/REST/GET/v1/search
      */
-		public DocList list() {
+    public DocList list() {
+      return null; // TODO change from null
 		}
     
     /**
@@ -200,7 +200,8 @@ namespace MarkLogicLib {
      * 
      * https://docs.marklogic.com/REST/GET/v1/keyvalue
      */
-		public void keyvalue() {
+    public void keyvalue() {
+      return ; // TODO change from void
 		}
     
     /**
@@ -209,7 +210,8 @@ namespace MarkLogicLib {
      *
      * See supported search grammar http://docs.marklogic.com/guide/search-dev/search-api#id_41745 
      */ 
-		public void search() {
+    public void search() {
+      return ; // TODO change from void
 		}
     
     /**
@@ -218,7 +220,8 @@ namespace MarkLogicLib {
      *
      * See supported search grammar http://docs.marklogic.com/guide/search-dev/search-api#id_41745 
      */ 
-		public void searchCollection() {
+    public void searchCollection() {
+      return ; // TODO change from void
 		}
     
     /**
@@ -227,7 +230,8 @@ namespace MarkLogicLib {
      * 
      * Uses structured search instead of cts:query style searches. See http://docs.marklogic.com/guide/search-dev/search-api#id_53458
      */
-		public void structuredSearch() {
+    public void structuredSearch() {
+      return ; // TODO change from void
 		}
     
     /**
@@ -236,17 +240,20 @@ namespace MarkLogicLib {
      *
      * For structured serch options see http://docs.marklogic.com/guide/rest-dev/search#id_48838
      */
-		public void saveSearchOptions() {
+    public void saveSearchOptions() {
+      return ; // TODO change from void
 		}
 
 		// NEEDED FOR FILE SYNC PROJECT
 		public DocRefs listURIs(String uri) {
       // TODO listURIs
+      return null; // TODO change from null
 		}
 		
 		// NEEDED FOR FILE SYNC PROJECT
 		public DocRefs listURIsSinceVersion(String uri,String mvccVersion) {
       // TODO listURIsSinceVersion
+      return null; // TODO change from null
 		}
 
 		// TRANSACTIONS
@@ -255,7 +262,7 @@ namespace MarkLogicLib {
      * Opens a new transaction. Optionally, specify your own name.
      * http://docs.marklogic.com/REST/POST/v1/transactions
      */
-    public void beginTransaction(String txname) {
+    public Response beginTransaction(String txname) {
       String path = @"/v1/transactions";
       Hashtable qp = new Hashtable ();
       qp.Add ("category", "metadata");
@@ -264,8 +271,9 @@ namespace MarkLogicLib {
       } else {
         qp["name"] = "client-txn";
       }
-      this.txid = qp["name"];
-      TResponse response = doPost (path, qp);
+      this.txid = (String)qp["name"];
+      return doPost (path, qp,null);
+      // TODO add error check and throw
 		}
 		
     // NEEDED FOR FILE SYNC PROJECT
@@ -273,11 +281,11 @@ namespace MarkLogicLib {
      * Commits the open transaction
      * http://docs.marklogic.com/REST/POST/v1/transactions/*
      */
-    public void commitTransaction() {
+    public Response commitTransaction() {
       String path = @"/v1/transactions/" + this.txid;
       Hashtable qp = new Hashtable ();
       qp.Add ("result", "commit");
-      doPost (path, qp);
+      return doPost (path, qp,null);
 		}
 		
     // NEEDED FOR FILE SYNC PROJECT
@@ -285,11 +293,11 @@ namespace MarkLogicLib {
      * Rolls back the open transaction.
      * http://docs.marklogic.com/REST/POST/v1/transactions/*
      */
-    public void rollbackTransaction() {
+    public Response rollbackTransaction() {
       String path = @"/v1/transactions/" + this.txid;
       Hashtable qp = new Hashtable ();
       qp.Add ("result", "rollback");
-      doPost (path, qp);
+      return doPost (path, qp,null);
 		}
 
 		// REST API EXTENSIONS
@@ -301,6 +309,7 @@ namespace MarkLogicLib {
      * Inserts many JSON documents. FAST aware, TRANSACTION aware.
      */
     public void saveAll() {
+      return ; // TODO change from void
     }
 
   }

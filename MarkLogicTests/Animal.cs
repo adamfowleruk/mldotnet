@@ -7,6 +7,9 @@ namespace MarkLogicTests
         public Animal ()
         {
         }
+
+        public String name { get; set; }
+        public String summary {get; set;}
     }
 }
 
