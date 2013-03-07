@@ -248,13 +248,19 @@ namespace MarkLogicLib {
 		public DocRefs listURIs(String uri) {
       // TODO listURIs
       return null; // TODO change from null
-		}
-		
-		// NEEDED FOR FILE SYNC PROJECT
-		public DocRefs listURIsSinceVersion(String uri,String mvccVersion) {
+    }
+    
+    // NEEDED FOR FILE SYNC PROJECT
+    public DocRefs listURIsSinceVersion(String uribase,String mvccVersion) {
       // TODO listURIsSinceVersion
       return null; // TODO change from null
-		}
+    }
+    
+    // NEEDED FOR FILE SYNC PROJECT
+    public DocRefs listURIsModifiedSince(String uribase,String modifiedSince) {
+      // TODO listURIsModifiedSince
+      return null; // TODO change from null
+    }
 
 		// TRANSACTIONS
     // NEEDED FOR FILE SYNC PROJECT

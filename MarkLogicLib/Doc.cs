@@ -1,5 +1,6 @@
 using System;
 using ServiceStack.Text;
+using System.IO;
 
 namespace MarkLogicLib
 {
@@ -33,8 +34,16 @@ namespace MarkLogicLib
       this.textContent = content;
     }
 
+    public JsonObject getJsonContent() {
+      JsonObject.Parse( getTextContent ());
+    }
+
     public void setFileContent(byte[] content) {
       this.fileContent = content;
+    }
+
+    public byte[] getFileContent() {
+      return fileContent;
     }
 
     public void detectType(string extension) {
@@ -102,6 +111,16 @@ namespace MarkLogicLib
 
     public String getTextContent() {
       return textContent;
+    }
+
+    public void toFile(string path) {
+      File.WriteAllBytes (path, fileContent);
+    }
+
+    public void fromFile(string path) {
+      this.setFileContent(File.ReadAllBytes(path));
+      // determine type from file extension
+      this.detectType(path.Substring(path.LastIndexOf(".")));
     }
   }
 }
