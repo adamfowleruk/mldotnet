@@ -37,6 +37,11 @@ namespace MarkLogicLib
       baseuri = "/";
     }
 
+    public override string ToString ()
+    {
+      return string.Format ("[Options: host={0}, port={1}, adminport={2}, ssl={3}, auth={4}, username={5}, password={6}, database={7}, searchoptions={8}, fastthreads={9}, fastparts={10}, baseuri={11}]", host, port, adminport, ssl, auth, username, password, database, searchoptions, fastthreads, fastparts, baseuri);
+    }
+
     public String getConnectionString() {
       String cs = "http";
       if (ssl) {
@@ -77,7 +82,7 @@ namespace MarkLogicLib
           cs = "/";
         } else {
           host = cs.Substring(0,pos2);
-          cs = cs.Substring(pos2 + 1);
+          cs = cs.Substring(pos2);
         }
       } else {
         host = cs.Substring (0, pos);
@@ -88,7 +93,7 @@ namespace MarkLogicLib
           cs = "/";
         } else {
           port = cs.Substring(0,pos2);
-          cs = cs.Substring(pos2 + 1);
+          cs = cs.Substring(pos2);
         }
       }
 

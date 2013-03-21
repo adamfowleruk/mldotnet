@@ -16,6 +16,52 @@ namespace MarkLogicLib {
 
     private String txid = null;
 
+
+    // static searches for convenience
+    
+    static String queryNameUrisUpdatedSince = "urismodifiedsince";
+    /*
+    static Object[] queryUrisUpdatedSince = {
+      Object[] options = new Object[] {
+        "return-results" = true,
+        "page-length" = 200,
+        "transform-results" = new Object {
+          apply = "raw"
+        },
+        constraint = new Object { // TODO put inside properties fragment constraint
+          name = "lastmodified",
+          range = new Object {
+            type = "xs:dateTime",
+            element = {
+              ns = "http://marklogic.com/xdmp/property",
+              name = "last-modified"
+            }
+          }
+        }
+      }
+    };*/
+
+    
+    static string queryUrisUpdatedSince = "{options : {" +
+      "\"return-results\" : true," +
+      "\"page-length\" : 200, " + 
+      "\"transform-results\" : {\"apply\" : \"raw\"}," +
+      "\"constraint\" : { " +
+        "\"name\" : \"lastmodified\"," + 
+        "\"range\" : {" +
+          "\"type\" : \"xs:dateTime\"," +
+            "\"element\" : {" +
+              "\"ns\" : \"http://marklogic.com/xdmp/property\"," +
+              "\"name\" : \"last-modified\"" +
+            "}" +
+          "}" +
+        "}" +
+        // TODO add URI base constraint
+      "}" +
+    "}"; // TODO research obj to json for nested objects in servicestack/c#
+
+
+
 	  public Connection () {
       options = new Options();
       configure (options);
@@ -37,19 +83,55 @@ namespace MarkLogicLib {
 
 
     public Response doGet(String path,Hashtable parameters) {
-      return restClient.Get<Response>(completePath(path,parameters));
+      try {
+        Response resp = restClient.Get<Response>(completePath(path,parameters));
+        resp.inError = false;
+        return resp;
+      } catch (Exception e) {
+        Response resp = new Response();
+        resp.inError = true;
+        resp.exception = e;
+        return resp;
+      }
     }
 
     public Response doPut(String path,Hashtable parameters,Doc doc) {
-      return restClient.Put<Response> (completePath (path, parameters), doc); // TODO serialise document to restClient URL as string content format json
+      try {
+        Response resp =  restClient.Put<Response> (completePath (path, parameters), doc.getTextContent()); // TODO serialise document to restClient URL as string content format json
+      resp.inError = false;
+      return resp;
+    } catch (Exception e) {
+      Response resp = new Response();
+      resp.inError = true;
+      resp.exception = e;
+      return resp;
+    }
     }
 
     public Response doPost(String path,Hashtable parameters,Doc doc) {
-      return restClient.Post<Response> (completePath (path, parameters), doc); // TODO serialise document to restClient URL as string content format json
+      try {
+        Response resp =  restClient.Post<Response> (completePath (path, parameters), doc.getTextContent()); // TODO serialise document to restClient URL as string content format json
+    resp.inError = false;
+    return resp;
+  } catch (Exception e) {
+    Response resp = new Response();
+    resp.inError = true;
+    resp.exception = e;
+    return resp;
+  }
     }
 
     public Response doDelete(String path,Hashtable parameters) {
-      return restClient.Delete<Response> (completePath (path, parameters));
+      try {
+        Response resp =  restClient.Delete<Response> (completePath (path, parameters));
+  resp.inError = false;
+  return resp;
+} catch (Exception e) {
+  Response resp = new Response();
+  resp.inError = true;
+  resp.exception = e;
+  return resp;
+}
     }
     
     /**
@@ -88,8 +170,10 @@ namespace MarkLogicLib {
       // NB This automatically uses Basic and Digest authentication where required
       this.restClient = new JsonServiceClient(this.options.getConnectionString()) {
         UserName = this.options.username,
-        Password = this.options.password
+        Password = this.options.password,
+        AlwaysSendBasicAuthHeader = true // TODO check this is always OK -> NB Must set REST server to Basic, not Digest (ServiceStack doesn't work with this for some reason)
       };
+
 	  }
 
 	  public void setLogger() {
@@ -141,6 +225,11 @@ namespace MarkLogicLib {
       qp.Add ("category", "metadata");
       Response response = doGet (path, qp);
       return response;
+    }
+
+    
+    public Response save(Doc doc,String docuri) {
+      return save (doc, docuri, null);
     }
 		
     // NEEDED FOR FILE SYNC PROJECT
@@ -230,36 +319,113 @@ namespace MarkLogicLib {
      * 
      * Uses structured search instead of cts:query style searches. See http://docs.marklogic.com/guide/search-dev/search-api#id_53458
      */
-    public void structuredSearch() {
-      return ; // TODO change from void
+    public Response structuredSearch(string options_opt,string query_opt) {
+      String path = @"/v1/search";
+      Hashtable qp = new Hashtable ();
+      qp.Add ("format", "json");
+      if (null != query_opt) {
+        qp.Add ("structuredQuery", query_opt);
+      }
+
+      if (options_opt != null) {
+        qp.Add ("options", options_opt);
+      }
+      
+      // make transaction aware
+      if (null != this.txid) {
+        qp.Add ("txid", this.txid);
+      }
+
+      Response response = doGet (path, qp);
+
+      return response; 
 		}
-    
+
+    // NEEDED FOR FILE SYNC PROJECT
     /**
      * Saves search options with the given name. These are referred to by mldb.structuredSearch.
      * http://docs.marklogic.com/REST/PUT/v1/config/query/*
      *
      * For structured serch options see http://docs.marklogic.com/guide/rest-dev/search#id_48838
      */
-    public void saveSearchOptions() {
-      return ; // TODO change from void
-		}
+    public bool saveSearchOptions(String name,String options) {
+      String path = @"/v1/config/query/" + name;
+      Hashtable qp = new Hashtable ();
+      qp.Add ("format", "json");
 
-		// NEEDED FOR FILE SYNC PROJECT
+      Doc doc = new Doc ();
+      doc.setJsonContent (options);
+
+      Response response = doPut(path,qp,doc); 
+      return !response.inError; // TODO log any errors and pass to caller as exception
+		}
+    
+    // NEEDED FOR FILE SYNC PROJECT
+    /**
+     * Ensures a search has been saved to the server. If it hasn't, it saves the search options to the server.
+     * Returns true if it exists on the server, or has been successfully created on the server by this call.
+     */
+    public bool ensureSearchSaved(String name,String options) {
+      // get search options from DB
+      
+      String path = @"/v1/config/query/" + name;
+      Hashtable qp = new Hashtable ();
+      qp.Add ("format", "json");
+
+      Response getResult = doGet (path,qp); // TODO verify the URI name of the persisted search options
+      if (getResult.inError) {
+        // if error (does not exist) then persist search options
+        return saveSearchOptions (name,options);
+      } else {
+        return true;
+      }
+    }
+
 		public DocRefs listURIs(String uri) {
       // TODO listURIs
       return null; // TODO change from null
     }
-    
-    // NEEDED FOR FILE SYNC PROJECT
+
     public DocRefs listURIsSinceVersion(String uribase,String mvccVersion) {
       // TODO listURIsSinceVersion
       return null; // TODO change from null
     }
     
-    // NEEDED FOR FILE SYNC PROJECT
+    // NEEDED FOR FILE SYNC PROJECT - Note modified since is the server's last-modified date string
     public DocRefs listURIsModifiedSince(String uribase,String modifiedSince) {
-      // TODO listURIsModifiedSince
-      return null; // TODO change from null
+      ArrayList list = new ArrayList ();
+
+      bool optionsResult = ensureSearchSaved (queryNameUrisUpdatedSince, queryUrisUpdatedSince);
+      if (!optionsResult) {
+        return null;
+      }
+
+      // TODO sanity check on W3C modified since date format
+
+      string search = "{query: { \"and-query\": {" +
+        // TODO uri base constraint
+        "\"range-constraint-query\": {" +
+          "\"constraint-name\": \"last-modified\"," +
+          "\"value\": [\"" + modifiedSince + "\"]" +
+        "}" +
+       "}}";
+
+      Response searchResult = structuredSearch (queryNameUrisUpdatedSince, search);
+      if (searchResult.inError) {
+        return null;
+      }
+
+      Doc jsonResults = searchResult.doc;
+      Object jsonObject = jsonResults.toJsonObject ();
+
+      // TODO loop until we load all the URIs in each page of search results
+
+      // parse response for URI list (multiple lines in http response text content?
+      return null;
+    }
+
+    public Response beginTransaction() {
+      return beginTransaction ("client-txn");
     }
 
 		// TRANSACTIONS
