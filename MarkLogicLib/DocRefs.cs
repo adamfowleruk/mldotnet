@@ -1,26 +1,27 @@
 using System;
+using System.Collections.Generic;
 using System.Collections;
 
 namespace MarkLogicLib
 {
-  public class DocRefs
+  public class DocRefs : IEnumerable
   {
+    List<string> docuris = new List<string>();
+
     public DocRefs ()
     {
-      docuris = "";
     }
 
-    public string docuris {get;set;}
+    public void Add(string uri) {
+      docuris.Add (uri);
+    }
 
-    public ArrayList toArrayList() {
-      ArrayList results = new ArrayList ();
+    public int Count() {
+      return docuris.Count;
+    }
 
-      string[] splits = docuris.Split (',');
-      foreach (string split in splits) {
-        results.Add (split);
-      }
-
-      return results;
+    public IEnumerator GetEnumerator() {
+      return docuris.GetEnumerator ();
     }
   }
 }

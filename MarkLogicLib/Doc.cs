@@ -1,6 +1,7 @@
 using System;
 using ServiceStack.Text;
 using System.IO;
+using MarkLogicLib.Objects;
 
 namespace MarkLogicLib
 {
@@ -19,6 +20,8 @@ namespace MarkLogicLib
     public string type { get; set; }
 
     public bool exists { get; set; }
+
+    public Properties properties { get; set; }
 
     public Doc ()
     {

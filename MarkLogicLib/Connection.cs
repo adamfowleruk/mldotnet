@@ -6,6 +6,11 @@ using ServiceStack.ServiceHost;
 using ServiceStack.ServiceClient.Web;
 using ServiceStack.ServiceInterface;
 using System.Collections;
+using ServiceStack.Logging;
+using System.Net;
+using System.IO;
+using MarkLogicLib.Objects;
+using ServiceStack.Text;
 
 namespace MarkLogicLib {
   public class Connection {
@@ -16,6 +21,7 @@ namespace MarkLogicLib {
 
     private String txid = null;
 
+    ILogger log = new ConsoleLogger();
 
     // static searches for convenience
     
@@ -63,6 +69,10 @@ namespace MarkLogicLib {
 
 
 	  public Connection () {
+      // set up ServiceStack as required
+      JsConfig.PropertyConvention = JsonPropertyConvention.Lenient; // supports deserialising hyphenated properties in ServiceStack.Text V3.9.43+
+
+      // setup this class now
       options = new Options();
       configure (options);
 	  }
@@ -84,13 +94,34 @@ namespace MarkLogicLib {
 
     public Response doGet(String path,Hashtable parameters) {
       try {
-        Response resp = restClient.Get<Response>(completePath(path,parameters));
-        resp.inError = false;
+        HttpWebResponse hres = restClient.Get<HttpWebResponse>(completePath(path,parameters));
+        
+        string body = "";
+        using (var stream = hres.GetResponseStream())
+        using (var sr = new StreamReader(stream)) {
+          body = sr.ReadToEnd();
+        }
+        
+        Response resp = new Response();
+        resp.statusCode = hres.StatusCode.ToString ();
+        
+        // TODO check if response is error XML or valid JSON content
+        if (hres.StatusCode.ToString().Substring(0,1).Equals ("4")) {
+          resp.inError = true;
+          resp.error = body;
+        } else {
+          resp.doc = new Doc();
+          resp.doc.setJsonContent(body);
+          resp.inError = false;
+        }
+
         return resp;
       } catch (Exception e) {
         Response resp = new Response();
         resp.inError = true;
+        resp.error = e.ToString();
         resp.exception = e;
+        log.log("doGet: error in response: " + e.ToString());
         return resp;
       }
     }
@@ -102,8 +133,10 @@ namespace MarkLogicLib {
       return resp;
     } catch (Exception e) {
       Response resp = new Response();
-      resp.inError = true;
-      resp.exception = e;
+        resp.inError = true;
+        resp.error = e.ToString();
+        resp.exception = e;
+        log.log("doPut: error in response: " + e.ToString());
       return resp;
     }
     }
@@ -115,8 +148,10 @@ namespace MarkLogicLib {
     return resp;
   } catch (Exception e) {
     Response resp = new Response();
-    resp.inError = true;
-    resp.exception = e;
+        resp.inError = true;
+        resp.error = e.ToString();
+        resp.exception = e;
+        log.log("doPost: error in response: " + e.ToString());
     return resp;
   }
     }
@@ -128,8 +163,10 @@ namespace MarkLogicLib {
   return resp;
 } catch (Exception e) {
   Response resp = new Response();
-  resp.inError = true;
-  resp.exception = e;
+        resp.inError = true;
+        resp.error = e.ToString();
+        resp.exception = e;
+        log.log("doDelete: error in response: " + e.ToString());
   return resp;
 }
     }
@@ -173,10 +210,10 @@ namespace MarkLogicLib {
         Password = this.options.password,
         AlwaysSendBasicAuthHeader = true // TODO check this is always OK -> NB Must set REST server to Basic, not Digest (ServiceStack doesn't work with this for some reason)
       };
-
 	  }
 
-	  public void setLogger() {
+	  public void setLogger(ILogger logger) {
+      this.log = logger;
 	  }
 
 
@@ -208,10 +245,21 @@ namespace MarkLogicLib {
      * 
      * https://docs.marklogic.com/REST/GET/v1/documents
      */
-    public Response get(String uri) {
+    public Doc get(String uri) {
       Hashtable qp = new Hashtable ();
       qp.Add ("uri", uri);
-      return doGet("/v1/documents", qp);
+      //return doGet("/v1/documents", qp);
+      
+      
+      Doc doc = new Doc ();
+      
+      byte[] responseBytes = restClient.Get<byte[]>(completePath("/v1/documents",qp));
+
+
+      doc.setFileContent (responseBytes);
+
+      return doc;
+
 		}
     
     /**
@@ -219,12 +267,28 @@ namespace MarkLogicLib {
      * 
      * https://docs.marklogic.com/REST/GET/v1/documents
      */
-    public Response metadata() {
+    public Doc metadata(string uri) {
       String path = @"/v1/documents";
       Hashtable qp = new Hashtable ();
       qp.Add ("category", "metadata");
-      Response response = doGet (path, qp);
-      return response;
+      qp.Add ("uri", uri);
+
+      string json = restClient.Get<string> (completePath (path, qp));
+      Doc doc = new Doc ();
+      doc.setJsonContent (json);
+
+      // properties fragment
+      log.log ("JSON: " + json);
+      log.log ("properties value: " + JsonObject.Parse (json).GetUnescaped ("properties"));
+      log.log ("lm value: " + JsonObject.Parse (JsonObject.Parse (json).GetUnescaped ("properties"))["last-modified"]);
+      Properties props = JsonObject.Parse (json).GetUnescaped ("properties").FromJson<Properties> ();
+      log.log ("properties: " + props.ToString());
+      doc.properties = props;
+
+      // TODO handle collections, permissions, quality within metadata too
+      // example:  metadata: {"collections":[],"permissions":[],"properties":{"last-modified":"2013-03-23T14:27:37Z"},"quality":0}
+
+      return doc;
     }
 
     
@@ -272,7 +336,7 @@ namespace MarkLogicLib {
      * Returns all documents in a collection, optionally matching against the specified fields
      * http://docs.marklogic.com/REST/GET/v1/search
      */
-		public DocList collect() {
+    public SearchResponse collect() {
       return null; // TODO change from null
 		}
     
@@ -280,7 +344,7 @@ namespace MarkLogicLib {
      * Lists all documents in a directory, to the specified depth (default: 1), optionally matching the specified fields
      * http://docs.marklogic.com/REST/GET/v1/search
      */
-    public DocList list() {
+    public SearchResponse list() {
       return null; // TODO change from null
 		}
     
@@ -299,8 +363,8 @@ namespace MarkLogicLib {
      *
      * See supported search grammar http://docs.marklogic.com/guide/search-dev/search-api#id_41745 
      */ 
-    public void search() {
-      return ; // TODO change from void
+    public SearchResponse search() {
+      return null; // TODO change from void
 		}
     
     /**
@@ -309,8 +373,8 @@ namespace MarkLogicLib {
      *
      * See supported search grammar http://docs.marklogic.com/guide/search-dev/search-api#id_41745 
      */ 
-    public void searchCollection() {
-      return ; // TODO change from void
+    public SearchResponse searchCollection() {
+      return null; // TODO change from void
 		}
     
     /**
@@ -319,13 +383,14 @@ namespace MarkLogicLib {
      * 
      * Uses structured search instead of cts:query style searches. See http://docs.marklogic.com/guide/search-dev/search-api#id_53458
      */
-    public Response structuredSearch(string options_opt,string query_opt) {
+    public SearchResponse structuredSearch(string options_opt,string query_opt) {
       String path = @"/v1/search";
       Hashtable qp = new Hashtable ();
       qp.Add ("format", "json");
       if (null != query_opt) {
         qp.Add ("structuredQuery", query_opt);
       }
+      //qp.Add ("directory", "/myproject/");
 
       if (options_opt != null) {
         qp.Add ("options", options_opt);
@@ -336,9 +401,39 @@ namespace MarkLogicLib {
         qp.Add ("txid", this.txid);
       }
 
-      Response response = doGet (path, qp);
+      //Response response = doGet (path, qp);
+      Search search = new Search ();
+      search.Options = options_opt;
+      search.StructuredQuery = query_opt;
 
-      return response; 
+      
+      SearchResponse result = null;
+      /*
+      using (Stream responseStream = restClient.Get<Stream> (search)) {
+        var str = responseStream.ReadFully().FromUtf8Bytes();
+        result = str.FromJson<SearchResponse>();
+      }
+      */
+
+      HttpWebResponse webResponse = restClient.Get<HttpWebResponse>(completePath("/v1/search",qp));
+
+      using (var stream = webResponse.GetResponseStream())
+      using (var sr = new StreamReader(stream)) {
+        var text = sr.ReadToEnd();
+        log.log ("response text: " + text);
+        result = text.FromJson<SearchResponse>();
+      }
+
+      log.log ("RESULT: " + result.ToString ());
+      for (int i = 0; i < result.Results.Length; i++) {
+        log.log ("Result " + i + ": " + result.Results[i].ToString());
+      }
+
+/*
+      Response response = new Response ();
+
+      return response; */
+      return result;
 		}
 
     // NEEDED FOR FILE SYNC PROJECT
@@ -393,35 +488,69 @@ namespace MarkLogicLib {
     
     // NEEDED FOR FILE SYNC PROJECT - Note modified since is the server's last-modified date string
     public DocRefs listURIsModifiedSince(String uribase,String modifiedSince) {
-      ArrayList list = new ArrayList ();
+      log.log ("listURIsModifiedSince()");
 
       bool optionsResult = ensureSearchSaved (queryNameUrisUpdatedSince, queryUrisUpdatedSince);
       if (!optionsResult) {
         return null;
       }
+      if (!uribase.Substring (uribase.Length - 1).Equals ("/")) {
+        uribase = uribase + "/";
+      }
 
       // TODO sanity check on W3C modified since date format
 
-      string search = "{query: { \"and-query\": {" +
-        // TODO uri base constraint
-        "\"range-constraint-query\": {" +
-          "\"constraint-name\": \"last-modified\"," +
-          "\"value\": [\"" + modifiedSince + "\"]" +
-        "}" +
-       "}}";
+      string search = "{query: { \"and-query\": " +
+        "{\"queries\":[" + 
+        "{\"directory-query\": {\"uri\":[\"" + uribase + "\"], \"infinite\": true }} ";
 
+      if (null!=modifiedSince && !"0".Equals (modifiedSince) && !"-1".Equals (modifiedSince)) {
+        search += ", {\"range-constraint-query\": {" +
+          "\"constraint-name\": \"lastmodified\"," +
+          "\"value\": [\"" + modifiedSince + "\"]" +
+          "}}";
+      }
+      search += "]}" +
+        "}}";
+
+      log.log ("calling structured search");
+
+
+      /*
       Response searchResult = structuredSearch (queryNameUrisUpdatedSince, search);
       if (searchResult.inError) {
+        log.log ("ERROR: returning null from listURIsModifiedSince: " + searchResult.exception.ToString());
         return null;
       }
+      log.log ("After call to structured search");
 
       Doc jsonResults = searchResult.doc;
+      log.log ("JSON uri search response: " + jsonResults.getTextContent ());
       Object jsonObject = jsonResults.toJsonObject ();
+      log.log ("JSON object: " + jsonObject.ToString ());
+
+      DocRefs results = new DocRefs ();
 
       // TODO loop until we load all the URIs in each page of search results
+      jsonObject.results
 
       // parse response for URI list (multiple lines in http response text content?
-      return null;
+      return results;
+      */
+
+
+      SearchResponse result = structuredSearch (queryNameUrisUpdatedSince, search);
+      //log.log ("Result: " + result.ToString());
+      //log.log ("Status: " + result.ResponseStatus.ToString ());
+      
+      DocRefs results = new DocRefs ();
+
+      SearchResult[] items = result.Results;
+      for (int i = 0; i < items.Length; i++) {
+        results.Add (items[i].Uri); // TODO don't just take the first 200 as default, loop through all files
+      }
+
+      return results;
     }
 
     public Response beginTransaction() {

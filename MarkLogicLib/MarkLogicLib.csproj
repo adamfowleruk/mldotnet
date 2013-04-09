@@ -97,6 +97,8 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\" />
+    <Folder Include="Operations\" />
+    <Folder Include="Objects\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
@@ -114,6 +116,12 @@
     <Compile Include="ConnectionAsync.cs" />
     <Compile Include="Request.cs" />
     <Compile Include="Response.cs" />
+    <Compile Include="ILogger.cs" />
+    <Compile Include="ConsoleLogger.cs" />
+    <Compile Include="Objects\Search.cs" />
+    <Compile Include="Objects\MarkLogicObject.cs" />
+    <Compile Include="Objects\QueryOptions.cs" />
+    <Compile Include="Objects\Document.cs" />
   </ItemGroup>
   <ProjectExtensions>
     <MonoDevelop>
